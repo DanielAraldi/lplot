@@ -11,6 +11,62 @@ text_types <- c(
   "legend"
 )
 
+#' Override an element's style without modifying its source
+#'
+#' Return a scene node with explicit style overrides. Unspecified properties
+#' retain their source semantics, and responsive lengths are evaluated in the
+#' actual measurement or drawing context.
+#'
+#' @param object An extracted element, grid grob, ggplot or lplot scene node.
+#'   Non-node objects are first normalized as scene nodes.
+#' @param ... Uniquely named style properties. Supported names depend on the
+#'   element type; unknown or inapplicable names raise an `lplot_error`.
+#'
+#' @section Supported styles:
+#' * Text elements: `color` (or `colour`, but not both), `font_family`,
+#'   `font_size`, `font_face` and `line_height`.
+#' * Generic grobs: the text properties plus `fill`, `line_width`, `line_type`.
+#' * Plot/panel background elements: `fill`, `color`, `line_width`, `line_type`.
+#' * Native legends additionally accept `legend.direction` (`"horizontal"`
+#'   or `"vertical"`), `legend.key_width` and `legend.key_height`.
+#' * Elements accept presentation properties `background`, `border`, `padding`,
+#'   `margin`, `alpha` and `opacity`. Opacity values must be between zero and one;
+#'   `opacity` takes precedence over `alpha` when both are present.
+#' * Whole plots and viewports accept only `background`, `border`, `padding`
+#'   and `margin`, not typography or alpha overrides.
+#'
+#' @details
+#' `font_size`, `line_width`, `legend.key_width` and `legend.key_height` accept
+#' logical lengths including `clamp()` expressions, but not `auto`. A numeric
+#' `font_size` is in logical pixels; use `"12pt"` for twelve points. This
+#' differs from the raw grid `fontsize` argument of [l_text()]. Edge and border
+#' properties follow [l_place()] and [l_viewport()] conventions.
+#'
+#' Native ggplot overrides target only the selected semantic theme component.
+#' Axis typography targets axis text, not tick geometry. For direct grobs,
+#' applicable graphical overrides are applied recursively to descendants, so
+#' this is an explicit restyling operation rather than mere group inheritance.
+#' Adapter-defined style callbacks may support additional names; see
+#' [l_register_element()].
+#'
+#' Repeated calls merge explicit overrides without mutating the source or
+#' earlier nodes. Styling does not wrap text or guarantee that it fits a box.
+#' Use [l_measure()] and [l_resolve()] to inspect the resulting geometry.
+#'
+#' @returns A styled `l_node`, retaining any element or viewport subclasses.
+#'   With no overrides, returns the normalized node unchanged.
+#' @seealso [l_get_element()], [l_text()], [l_measure()], [l_register_element()]
+#' @examples
+#' original <- l_get_element(l_text("Survey area", fontsize = 10), "annotation")
+#' styled <- l_style(original,
+#'   color = "#194E70",
+#'   font_size = "clamp(10pt, 2vmin, 18pt)", background = "white", padding = 4
+#' )
+#' l_measure(original)
+#' l_measure(styled, list(width = 800, height = 600))
+#' viewport <- l_style(l_viewport(), background = "#EDF3F5", padding = "2mm")
+#' print(viewport)
+#' @export
 l_style <- function(object, ...) {
   node <- as_l_node(object)
   type <- node$type %||% node$kind
@@ -120,8 +176,7 @@ l_style <- function(object, ...) {
 }
 
 theme_keys <- function(type) {
-  switch(
-    type,
+  switch(type,
     title = "plot.title",
     subtitle = "plot.subtitle",
     caption = "plot.caption",
@@ -179,8 +234,7 @@ style_source <- function(source, type, style) {
   }
   rectangle <- list()
   for (property in intersect(names(style), c("color", "fill", "line_type"))) {
-    key <- switch(
-      property,
+    key <- switch(property,
       color = "colour",
       fill = "fill",
       line_type = "linetype"

@@ -275,6 +275,25 @@ preferred box and emits `lplot_collision`; overflow emits `lplot_overflow`.
 `l_render(scene, debug = TRUE)` shows boxes, margins, content, intrinsic bounds,
 anchors, IDs, coordinates, z-order and collision candidates.
 
+## Maintaining API Documentation
+
+All 18 exported functions and four registered S3 methods have English roxygen2
+documentation next to their definitions in [R/](R/). Each help topic includes
+parameters, return values, usage details, related functions and runnable examples.
+
+After editing these comments, regenerate the help files and namespace from the
+package root (install `roxygen2` as a development tool first if needed):
+
+```sh
+Rscript -e 'roxygen2::roxygenise(".")'
+```
+
+The files in [man/](man/) and [NAMESPACE](NAMESPACE) are generated; edit the
+source comments instead of modifying these outputs by hand, and include the
+regenerated files when submitting changes. roxygen2 is not a runtime dependency.
+Check the generated examples with `R CMD check` before publishing. Passing
+documentation checks does not replace the remaining CRAN submission requirements.
+
 ## Validation
 
 ```sh

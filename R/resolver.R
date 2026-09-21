@@ -561,6 +561,52 @@ root_context <- function(node, width, height, dpi) {
   )
 }
 
+#' Resolve a scene into boxes for one rendering context
+#'
+#' Evaluate logical lengths, intrinsic sizes, constraints and collision
+#' policies without drawing. The result is an inspection snapshot for a
+#' particular size; keep the original scene for later rendering or export.
+#'
+#' @param object An lplot scene, viewport, element, ggplot or grid grob.
+#'   Non-viewport objects are wrapped in a root viewport for resolution.
+#' @param width,height Optional positive numeric root dimensions in logical
+#'   pixels. Each `NULL` dimension uses the current grid viewport if a device
+#'   is open. Without a device, scene reference dimensions are used, falling
+#'   back to 800 by 600 for automatic dimensions.
+#' @param dpi Positive output-density metadata. Logical pixels remain 1/96 inch;
+#'   this value does not redefine lengths or change the current device.
+#'
+#' @details
+#' The root content box accounts for padding and borders; child coordinates
+#' are local to their parent's content box. Implicit node IDs are assigned
+#' deterministically. Conflicting constraints raise errors. Unresolved box
+#' overflow and collision placement emit `lplot_overflow` and `lplot_collision`
+#' warnings rather than being silently repaired or clipped.
+#'
+#' Measurement uses the current graphics device's font metrics. If no device
+#' is open, a temporary null PDF device is opened and closed. The caller's
+#' viewport stack and scene declarations are preserved. Results may differ
+#' between devices with different font metrics.
+#'
+#' @returns An `l_layout` list with `root` and `context` fields. The context
+#'   contains dimensions, root dimensions and DPI. Resolved nodes contain
+#'   `id`, the logical `node`, a named `box` (`x`, `y`, `width`, `height`),
+#'   `margin`, `padding`, `border`, prepared `content`, `intrinsic` dimensions,
+#'   a content `scale`, `collision_candidates` and resolved `children`. Box
+#'   measurements are logical pixels. This is not an input to [l_render()].
+#' @seealso [l_measure()], [l_render()], [l_place()], [l_length()]
+#' @examples
+#' scene <- l_viewport(list(
+#'   l_place(l_rect(fill = "#95CEC0"),
+#'     left = "10%", top = 10,
+#'     width = "50%", height = 40
+#'   )
+#' ))
+#' small <- l_resolve(scene, width = 300, height = 120)
+#' large <- l_resolve(scene, width = 600, height = 240)
+#' small$root$children[[1]]$box
+#' large$root$children[[1]]$box
+#' @export
 l_resolve <- function(object, width = NULL, height = NULL, dpi = 96) {
   node <- as_l_node(object)
   if (node$kind != "viewport") {
@@ -600,6 +646,44 @@ l_resolve <- function(object, width = NULL, height = NULL, dpi = 96) {
   })
 }
 
+#' Measure a graphics object's constrained and intrinsic size
+#'
+#' Prepare and measure one node in an explicit layout context without drawing.
+#' Use this for sizing annotations and checking the effect of responsive
+#' styles; use [l_resolve()] to inspect all children of a complete scene.
+#'
+#' @param object An lplot element, scene node, ggplot or grid grob.
+#' @param viewport A list with positive numeric `width` and `height` in logical
+#'   pixels. Optional `root_width` and `root_height` control root-relative units;
+#'   otherwise each defaults to its corresponding local dimension.
+#' @inheritParams l_resolve
+#'
+#' @details
+#' Measurement includes the node's dimension constraints, padding and border
+#' in the reported box size, but not its outer margins. The `intrinsic` field
+#' describes content before those layout additions. Custom adapter measurers
+#' receive prepared styled content; see [l_register_element()].
+#'
+#' Plots, panels and viewports use available or declared dimensions rather than
+#' inferring bounds around absolutely positioned children. Generic gTrees may
+#' not provide intrinsic child bounds; give templates explicit layout sizes.
+#' Measurement does not wrap text or run full sibling collision placement.
+#'
+#' The current device supplies font metrics. If none is open, a temporary null
+#' PDF device is used and closed. No file is written and the caller's viewport
+#' stack is restored. Results are context-specific, not cached into the node.
+#'
+#' @returns A list with numeric `width` and `height`, named numeric `intrinsic`
+#'   dimensions and `units = "px"`.
+#' @seealso [l_resolve()], [l_get_element()], [l_style()], [l_template()]
+#' @examples
+#' label <- l_get_element(l_text("Survey area"), "annotation",
+#'   style = list(font_size = "clamp(8pt, 2vmin, 18pt)", padding = 4)
+#' )
+#' l_measure(label, viewport = list(width = 300, height = 200))
+#' l_measure(label, viewport = list(width = 1200, height = 800))
+#' l_measure(l_rect(), viewport = list(width = 200, height = 100))
+#' @export
 l_measure <- function(
   object,
   viewport = list(width = 800, height = 600),
