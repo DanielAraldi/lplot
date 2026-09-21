@@ -42,6 +42,43 @@ test_that("map examples resolve and render with a metrically aligned scale", {
   }
 })
 
+test_that("joined map credits fit compact plotting devices without overflow", {
+  skip_if_not_installed("sf")
+  examples <- load_map_examples()
+  scene <- examples$map_join_scene()
+  original <- scene
+  for (size in list(c(480, 320), c(600, 400), c(640, 420), c(1200, 700))) {
+    grDevices::pdf(NULL, width = size[[1]] / 96, height = size[[2]] / 96)
+    tryCatch(
+      {
+        expect_no_warning(layout <- l_render(scene))
+        for (sheet in layout$root$children) {
+          credits <- sheet$children[[5]]
+          legend <- sheet$children[[4]]
+          available <- content_box(sheet)
+          expect_gte(credits$box[["x"]], 0)
+          expect_gte(credits$box[["y"]], 0)
+          expect_lte(
+            credits$box[["x"]] + credits$box[["width"]],
+            available[["width"]]
+          )
+          expect_lte(
+            credits$box[["y"]] + credits$box[["height"]],
+            available[["height"]]
+          )
+          expect_lte(
+            legend$box[["y"]] + legend$box[["height"]],
+            credits$box[["y"]]
+          )
+          expect_equal(credits$node$overflow, "visible")
+        }
+      },
+      finally = grDevices::dev.off()
+    )
+  }
+  expect_identical(scene, original)
+})
+
 test_that("locator highlights the exact projected extent and north is georeferenced", {
   skip_if_not_installed("sf")
   examples <- load_map_examples()

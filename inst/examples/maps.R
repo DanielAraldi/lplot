@@ -161,7 +161,7 @@ map_sheet <- function(plot, frame, heading = "Carolina do Norte") {
   legend <- lplot::l_get_element(plot, "legend")
   credit <- lplot::l_get_element(
     lplot::l_text(
-      "Fonte: NAD83 / NC (m) | Elaboração: Daniel Sansão Araldi",
+      "Fonte: NAD83 / NC (m)\nElaboração: Daniel Sansão Araldi",
       fontsize = 7,
       col = "#50666C"
     ),
