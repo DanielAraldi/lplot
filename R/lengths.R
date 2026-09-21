@@ -1,3 +1,43 @@
+#' Declare a device-independent layout length
+#'
+#' Normalize a numeric value, a length string or an existing logical length.
+#' The result stores a declaration rather than a device-dependent measurement;
+#' it is evaluated in context by the layout resolver at render time.
+#'
+#' @param value A single finite number, an existing `l_length`, or a string
+#'   containing a number and unit, `"auto"`, or a supported length expression.
+#' @param unit Unit for numeric `value`: `"px"`, `"%"`, `"pt"`, `"mm"`, `"cm"`,
+#'   `"in"`, `"vw"`, `"vh"`, `"vmin"` or `"vmax"`. Ignored when `value` is
+#'   already a string or an `l_length`.
+#'
+#' @details
+#' One logical pixel is 1/96 inch and one point is 1/72 inch. Device DPI affects
+#' raster density, not the definition of these lengths. Percentages use the
+#' containing content box on the relevant axis. `vw` and `vh` are percentages
+#' of the root width and height; `vmin` and `vmax` use their minimum and maximum.
+#'
+#' Strings accept nested `min()`, `max()` and `clamp()` expressions. Parsing
+#' does not evaluate R code. `auto` is not allowed inside an expression. A
+#' character value such as `"24"` needs a unit; the numeric value `24` uses
+#' `unit`. Negative values can describe offsets, but negative dimensions are
+#' rejected by the node or resolver where they are used.
+#'
+#' `auto` is context-dependent: it uses intrinsic content size for ordinary
+#' elements and available space for plots, panels and viewports. It is not a
+#' request for text wrapping. These values are not [grid::unit()] objects.
+#'
+#' @returns An S3 `l_length` object containing an unresolved value or expression.
+#'   An existing `l_length` is returned unchanged.
+#' @seealso [l_clamp()], [l_place()], [l_resolve()]
+#' @examples
+#' l_length("50%")
+#' l_length(2, "cm")
+#' l_length("min(40mm, max(10px, 25%))")
+#' scene <- l_viewport(list(
+#'   l_place(l_rect(fill = "grey80"), width = l_length("50%"), height = 30)
+#' ))
+#' l_resolve(scene, width = 400, height = 100)$root$children[[1]]$box
+#' @export
 l_length <- function(value = "auto", unit = "px") {
   if (inherits(value, "l_length")) {
     return(value)
@@ -108,6 +148,29 @@ length_has_auto <- function(length) {
       any(vapply(length$arguments, length_has_auto, logical(1))))
 }
 
+#' Bound a responsive length between a minimum and a maximum
+#'
+#' Build an unresolved constraint that uses a preferred length while respecting
+#' lower and upper bounds. Different units can be combined and are compared
+#' only when a layout context is available.
+#'
+#' @param minimum,preferred,maximum Values accepted by [l_length()], except
+#'   `"auto"`. Bare numbers are logical pixels. Nested expressions are allowed.
+#'
+#' @details
+#' At resolution time, the result is the preferred value limited to the
+#' resolved interval. A minimum greater than the maximum in that context raises
+#' an error; construction alone cannot detect all mixed-unit contradictions.
+#' This is equivalent to a `clamp()` string accepted by [l_length()].
+#'
+#' @returns An S3 `l_length` object with an unresolved clamp expression.
+#' @seealso [l_length()], [l_style()], [l_place()]
+#' @examples
+#' width <- l_clamp("80px", "50%", "180px")
+#' scene <- l_viewport(list(l_place(l_rect(), width = width, height = 30)))
+#' l_resolve(scene, width = 200, height = 60)$root$children[[1]]$box
+#' l_resolve(scene, width = 500, height = 60)$root$children[[1]]$box
+#' @export
 l_clamp <- function(minimum, preferred, maximum) {
   arguments <- lapply(list(minimum, preferred, maximum), l_length)
   if (any(vapply(arguments, length_has_auto, logical(1)))) {
@@ -134,6 +197,21 @@ format_length <- function(length) {
   )
 }
 
+#' Print a logical length without resolving it
+#'
+#' Display the stored value or nested expression in a compact form. Printing
+#' does not convert units, create a device or draw graphics.
+#'
+#' @param x An `l_length` object, usually created by [l_length()] or [l_clamp()].
+#' @param ... Additional arguments required by the generic; currently unused.
+#' @returns `x`, invisibly and unchanged. The formatted declaration is written
+#'   to the console as a side effect.
+#' @seealso [l_length()], [l_clamp()], [l_resolve()]
+#' @examples
+#' value <- l_clamp("10pt", "2vmin", "18pt")
+#' returned <- print(value)
+#' identical(returned, value)
+#' @export
 print.l_length <- function(x, ...) {
   cat("<l_length> ", format_length(x), "\n", sep = "")
   invisible(x)
@@ -171,8 +249,7 @@ resolve_length <- function(value, context, axis = "x", intrinsic = NA_real_) {
       context = context,
       axis = axis
     )
-    return(switch(
-      value$kind,
+    return(switch(value$kind,
       min = min(resolved),
       max = max(resolved),
       clamp = {
@@ -183,8 +260,7 @@ resolve_length <- function(value, context, axis = "x", intrinsic = NA_real_) {
       }
     ))
   }
-  multiplier <- switch(
-    value$unit,
+  multiplier <- switch(value$unit,
     px = 1,
     "%" = (if (axis == "x") context$width else context$height) / 100,
     pt = 96 / 72,

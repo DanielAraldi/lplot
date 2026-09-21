@@ -1,3 +1,85 @@
+#' Export a plot or scene to an image file
+#'
+#' Render explicit graphical content to JPEG, PNG, SVG or WebP using an
+#' independent graphics device. Export dimensions do not depend on the Plots
+#' pane or on the size of the current device.
+#'
+#' @param plot An explicit ggplot, grid grob, `l_element` or `l_viewport`/scene.
+#'   A filename, screenshot or resolved `l_layout` is not an accepted source.
+#' @param type Single case-insensitive format: `"jpg"`, `"jpeg"`, `"png"`,
+#'   `"svg"` or `"webp"`. JPG and JPEG use the same encoder.
+#' @param dir Destination directory, created recursively when necessary.
+#'   Defaults to the working directory; do not include the filename here.
+#' @param filename Basename without directory components. The selected extension
+#'   is appended if absent. A supplied extension must match `type`, with JPG and
+#'   JPEG treated as interchangeable.
+#' @param width,height Positive numeric dimensions in logical pixels. Defaults
+#'   are 800 by 600, independent of the scene's root reference dimensions.
+#' @param dpi Positive raster density. Raster output is
+#'   `round(width * dpi / 96)` by `round(height * dpi / 96)` pixels. SVG dimensions
+#'   are `width / 96` by `height / 96` inches, independent of DPI.
+#' @param background Single valid device background color. PNG, SVG and WebP
+#'   allow `"transparent"`; JPEG requires an opaque color. Opaque scene
+#'   backgrounds still cover the device background.
+#' @param quality Number from zero to 100 for lossy JPEG/WebP encoding. It is
+#'   validated but has no effect on PNG or SVG.
+#' @param overwrite Logical; whether an existing file may be replaced. The
+#'   default `FALSE` protects existing output.
+#'
+#' @section Optional codecs:
+#' PNG and JPEG require **ragg**, SVG requires **svglite**, and WebP requires
+#' **ragg** and **webp**. Missing packages raise `lplot_missing_dependency` with
+#' installation guidance; no packages are installed automatically. SVG preserves
+#' vector content, but source raster layers remain embedded raster images.
+#'
+#' @section Device and file safety:
+#' Export opens its own device, draws with [l_render()], closes that device and
+#' restores the caller's device, including after rendering errors. It does not
+#' depend on an implicit last plot and does not mutate scene declarations.
+#'
+#' A temporary file is written in the destination directory and renamed only
+#' after successful rendering and encoding. A rendering failure leaves an
+#' existing destination unchanged. Temporary files are removed; a newly created
+#' directory may remain after an error. Concurrent writers to the same path
+#' are not coordinated.
+#'
+#' @section Limits and conditions:
+#' Raster output must have at least one pixel per axis and at most 100 million
+#' pixels in total. WebP additionally limits each axis to 16383 pixels. Higher
+#' DPI increases raster density without changing logical layout size. Font
+#' metrics can differ between graphics devices.
+#'
+#' Invalid arguments raise `lplot_error`; an existing destination raises
+#' `lplot_file_exists`; directory/publication failures raise `lplot_export`.
+#' Layout warnings remain visible and normally do not prevent saving, whereas
+#' invalid constraints still fail. PDF is not supported by `type`; use a PDF
+#' device with [l_render()] when that format is required.
+#'
+#' @returns The normalized absolute path of the exported file, invisibly.
+#'   The output file and, if necessary, its parent directory are created as
+#'   side effects.
+#' @seealso [l_render()], [l_viewport()], [l_resolve()]
+#' @examples
+#' scene <- l_viewport(list(l_place(l_text("Map export"), left = 12, top = 12)))
+#' if (requireNamespace("ragg", quietly = TRUE)) {
+#'   file <- l_save(scene,
+#'     type = "png", dir = tempdir(),
+#'     filename = basename(tempfile("lplot-")), width = 400, height = 200,
+#'     dpi = 144
+#'   )
+#'   stopifnot(file.exists(file))
+#'   unlink(file)
+#' }
+#' if (requireNamespace("svglite", quietly = TRUE)) {
+#'   file <- l_save(scene,
+#'     type = "svg", dir = tempdir(),
+#'     filename = basename(tempfile("lplot-")), width = 400, height = 200,
+#'     background = "transparent"
+#'   )
+#'   stopifnot(file.exists(file))
+#'   unlink(file)
+#' }
+#' @export
 l_save <- function(
   plot,
   type = "png",

@@ -29,8 +29,7 @@ normalize_edges <- function(value = 0) {
   if (!count %in% 1:4) {
     l_abort("Edges need one to four values, or named sides.")
   }
-  index <- switch(
-    as.character(count),
+  index <- switch(as.character(count),
     "1" = rep(1L, 4L),
     "2" = c(1L, 2L, 1L, 2L),
     "3" = c(1L, 2L, 3L, 2L),
@@ -246,6 +245,79 @@ validate_node <- function(node) {
   invisible(node)
 }
 
+#' Position and constrain a graphics object in a scene
+#'
+#' Wrap a ggplot or grob as a scene node, or return an existing node with updated
+#' logical placement properties. No drawing or device-dependent conversion
+#' occurs, and the input object is not modified.
+#'
+#' @param object A ggplot, grid grob, extracted `l_element`, or existing lplot
+#'   scene node. A ggplot's effective theme is captured when it becomes a node.
+#' @param x,y Optional anchor coordinates measured from the top-left of the
+#'   containing content box. Positive `y` points down. Values use [l_length()].
+#' @param width,height Logical border-box dimensions accepted by [l_length()].
+#'   `"auto"` uses content or available space, depending on the node type.
+#' @param top,right,bottom,left Optional edge insets. Opposing insets determine
+#'   an automatic dimension. Do not combine `x` with horizontal insets or `y`
+#'   with vertical insets; conflicting constraints raise an error.
+#' @param anchor Anchor point used for coordinates or implicit docking. One of
+#'   `"top-left"`, `"top-center"`, `"top-right"`, `"center-left"`, `"center"`,
+#'   `"center-right"`, `"bottom-left"`, `"bottom-center"`, `"bottom-right"`.
+#' @param z_index Finite numeric drawing order. Higher values draw later;
+#'   original child order breaks ties.
+#' @param ... Uniquely named additional node properties, described below.
+#'   Unknown properties raise an `lplot_error`.
+#'
+#' @details
+#' Omitted placement arguments preserve an existing node's declarations.
+#' Explicit `NULL` clears an optional coordinate or constraint. Bare numbers
+#' are logical pixels, percentages use the parent's content box, and viewport
+#' units use the root. Padding and borders are inside the box; margins are
+#' outside. See [l_length()] for units and [l_viewport()] for edge shorthand.
+#'
+#' @section Additional properties:
+#' * `min_width`, `max_width`, `min_height`, `max_height`: optional logical
+#'   dimension bounds; `aspect_ratio`: positive width-to-height ratio.
+#' * `id`: optional nonempty node identifier, unique within a scene.
+#' * `margin`, `padding`, `safe_area`: edge lengths; the safe area constrains
+#'   automatic child positioning.
+#' * `background`: fill color or `NULL`; `border`: a color or a list with
+#'   `color`, `width` and `line_type` entries.
+#' * `overflow`: `"visible"` (default), `"hidden"` or `"inherit"`. Clipping
+#'   does not repair geometry or automatically suppress overflow warnings.
+#' * `flow`: `"absolute"` (default), `"row"`, `"column"` or `"stack"`;
+#'   `gap`: logical spacing for row/column flow.
+#' * `collision`: `"none"` (default), `"avoid"`, `"shrink"` or
+#'   `"avoid-and-shrink"`; `priority`: finite numeric placement priority;
+#'   `allow_move`: whether explicitly positioned nodes may be moved;
+#'   `candidates`: optional character vector of alternative anchors.
+#' * `responsive`: logical permission for collision-driven shrinking, not a
+#'   switch that freezes percentage or viewport-relative units.
+#' * `metadata`: application-specific metadata. `metadata$obstacle` overrides
+#'   whether the node is treated as an obstacle during collision resolution.
+#'
+#' @section Collision behavior:
+#' Collision handling is opt-in and based on sibling boxes, not painted map
+#' features. Higher priorities are processed first. Explicit positions are
+#' protected unless `allow_move = TRUE`. Shrinking requires `responsive = TRUE`
+#' and a minimum dimension, with a 10 percent scale safety floor. Whole plots
+#' and panel/background elements are normally excluded as obstacles. Failed
+#' placement preserves a fallback and emits `lplot_collision`; an overflowing
+#' box emits `lplot_overflow`. Inspect [l_resolve()] results for diagnostics.
+#'
+#' @returns A positioned `l_node`, preserving subclasses when `object` was
+#'   already a scene node. Child-local declarations are retained.
+#' @seealso [l_viewport()], [l_join()], [l_length()], [l_render()]
+#' @examples
+#' label <- l_place(l_text("Survey area"),
+#'   x = "50%", top = 10,
+#'   anchor = "top-center", id = "label"
+#' )
+#' scene <- l_viewport(list(label), width = 300, height = 100)
+#' l_resolve(scene)$root$children[[1]]$box
+#' moved <- l_place(label, x = NULL, left = 20)
+#' l_resolve(l_viewport(list(moved)), width = 300, height = 100)
+#' @export
 l_place <- function(
   object,
   x = NULL,
@@ -295,6 +367,57 @@ scene_ids <- function(node) {
   c(node$id, unlist(lapply(node$children, scene_ids), use.names = FALSE))
 }
 
+#' Create a local layout context for graphical elements
+#'
+#' Build a logical scene containing plots, grobs, extracted elements or nested
+#' viewports. Children are resolved relative to this node's content box when
+#' the scene is measured or drawn, not when it is constructed.
+#'
+#' @param plots List of ggplots, grid grobs or lplot nodes. A single graphics
+#'   object is also accepted. The default creates an empty viewport.
+#' @param width,height Logical border-box dimensions. At the root these are
+#'   reference dimensions for resolution without a device, not forced render
+#'   sizes. Use [l_render()] arguments to request explicit drawing dimensions.
+#' @param units Unit for numeric `width` and `height`; see [l_length()]. Other
+#'   numeric properties remain logical pixels.
+#' @param padding,margin One to four logical edge lengths, or a named list with
+#'   `top`, `right`, `bottom`, `left` entries. Padding is inside the box; margin
+#'   is outside. Unnamed shorthand follows CSS order: all; vertical/horizontal;
+#'   top/horizontal/bottom; or top/right/bottom/left. Missing named sides are zero.
+#' @param background Optional background fill color. `NULL` leaves it unset.
+#' @param responsive Logical; permits collision-driven shrinking of this node
+#'   when minimum dimensions are supplied. Logical units always resolve anew.
+#' @param safe_area Insets reserved for automatically positioned children,
+#'   using the same shorthand as `padding`. `NULL` means zero insets.
+#' @param ... Additional named node properties accepted by [l_place()], such
+#'   as `id`, `border`, `flow`, `gap`, `overflow` and dimension constraints.
+#'
+#' @details
+#' This is a scene-graph context, not a [grid::viewport()] and not a table of
+#' cells. Arbitrary positioning is the default. Percentages refer to the local
+#' content area after padding and borders; viewport units refer to the root.
+#' `flow = "row"` or `"column"` provides sequential placement, while
+#' `flow = "stack"` overlays children. Root margins matter only when nested.
+#'
+#' Implicit IDs are assigned from tree paths such as `root/1`. Explicit IDs must
+#' be unique within the scene. Objects are copied logically; no active plot or
+#' global registry is consulted. Automatic sizing does not wrap text or infer
+#' a bounding box for arbitrary grid trees. See [l_place()] for collision and
+#' clipping rules and [l_template()] for composition inside a single grob.
+#'
+#' @returns An `l_viewport`, also inheriting from `l_scene` and `l_node`.
+#'   Construction does not draw; use [l_render()] or [grid::grid.draw()].
+#' @seealso [l_place()], [l_join()], [l_resolve()], [l_template()]
+#' @examples
+#' scene <- l_viewport(list(
+#'   l_place(l_rect(fill = "#95CEC0", col = NA),
+#'     left = "10%", top = "10%", width = "80%", height = "80%"
+#'   ),
+#'   l_place(l_text("Local context"), x = "50%", y = "50%", anchor = "center")
+#' ), width = 400, height = 200, padding = 10, background = "white")
+#' l_resolve(scene, width = 800, height = 400)$root$children[[1]]$box
+#' l_render(scene, width = 400, height = 200)
+#' @export
 l_viewport <- function(
   plots = list(),
   width = "auto",
@@ -340,6 +463,42 @@ l_viewport <- function(
   node
 }
 
+#' Join graphical scenes while preserving local coordinates
+#'
+#' Create a parent viewport around existing graphics objects or scenes without
+#' flattening their child declarations. Joining alone does not imply a grid or
+#' automatic side-by-side placement.
+#'
+#' @inheritParams l_viewport
+#' @param position Optional uniquely named list of [l_place()] node properties
+#'   applied to the joined parent after construction, not to its children.
+#' @param gap Logical spacing between children in row or column flow. Ignored
+#'   by absolute positioning, the default flow.
+#' @param ... Additional arguments forwarded to [l_viewport()], such as
+#'   `padding`, `flow`, `border`, `overflow` and other node properties.
+#'
+#' @details
+#' Position children with [l_place()] before joining, or request `flow = "row"`
+#' or `flow = "column"`. Each nested scene keeps its own local coordinates and
+#' is resolved in the box allocated by the parent. Moving the joined object
+#' later does not rewrite those child declarations.
+#'
+#' @returns An `l_viewport`, also inheriting from `l_scene` and `l_node`.
+#'   The input scenes are not modified.
+#' @seealso [l_viewport()], [l_place()], [l_resolve()]
+#' @examples
+#' first <- l_viewport(list(l_place(l_text("First"), left = 8, top = 8)),
+#'   background = "#DCEFE8"
+#' )
+#' second <- l_viewport(list(l_place(l_text("Second"), left = 8, top = 8)),
+#'   background = "#EDF3F5"
+#' )
+#' joined <- l_join(list(
+#'   l_place(first, left = "0%", width = "48%", height = "100%"),
+#'   l_place(second, left = "52%", width = "48%", height = "100%")
+#' ), width = 400, height = 160)
+#' l_render(joined, width = 400, height = 160)
+#' @export
 l_join <- function(
   plots,
   width = "auto",
@@ -363,6 +522,25 @@ l_join <- function(
   node
 }
 
+#' Print a compact summary of a scene node
+#'
+#' Display the node class, kind, identifier, logical dimensions and child
+#' count. Unlike printing a ggplot, printing an lplot node does not draw it.
+#'
+#' @param x An `l_node` or subclass, such as an `l_element` or `l_viewport`.
+#' @param ... Additional arguments required by the generic; currently unused.
+#' @details Dimensions are printed as stored declarations, not as resolved
+#'   measurements. An unassigned node ID is shown explicitly. Use [l_resolve()]
+#'   to inspect calculated boxes and [l_render()] to display the scene.
+#' @returns `x`, invisibly and unchanged. A summary is written to the console.
+#' @seealso [l_viewport()], [l_place()], [l_resolve()]
+#' @examples
+#' scene <- l_viewport(list(l_place(l_text("Example"), left = 10, top = 10)),
+#'   width = 300, height = 100
+#' )
+#' returned <- print(scene)
+#' identical(returned, scene)
+#' @export
 print.l_node <- function(x, ...) {
   cat(
     "<",
