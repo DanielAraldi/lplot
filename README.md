@@ -57,7 +57,7 @@ Install the optional `ragg` dependency before using this PNG export.
 [inst/examples/maps.R](inst/examples/maps.R) contains three independently callable
 scenes. They use the North Carolina county polygons bundled with the optional `sf`
 package, so no data download, API key or network connection is needed after installation.
-The existing terrain example remains unchanged.
+Both map and terrain examples use the graphical constructors described below.
 
 In the Positron R console, with the project root as the working directory:
 
@@ -85,7 +85,8 @@ Run the three rendering commands individually to inspect each plot:
 The main panels are extracted with `l_get_element(..., "panel")`; original title
 and legend positions are therefore not duplicated. `map_sheet()` places extracted
 titles, subtitles and legends, while `map_frame()` keeps the panel's aspect ratio.
-Scale bars and north arrows are native grid grobs passed through `l_get_element()`.
+Scale bars and north arrows use `l_template()`, `l_rect()` and `l_text()` to build
+native grid grobs passed through `l_get_element()`.
 All helpers live in the same script; sourcing it only defines functions and does
 not open a graphics device or automatically draw all examples.
 
@@ -111,6 +112,40 @@ For an installed package, replace the two loading commands with:
 library(lplot)
 source(system.file("examples", "maps.R", package = "lplot"))
 ```
+
+## Templates and Graphical Primitives
+
+Create reusable graphical content without wrapping every style in `grid::gpar()`:
+
+```r
+badge <- l_template(
+  l_rect(fill = "white", col = "#203C43", lwd = 1),
+  l_text("N", fontsize = 12, fontface = "bold"),
+  gp = list(col = "#203C43")
+)
+scene <- l_viewport(list(
+  l_place(badge, right = 12, top = 12, width = 40, height = 50)
+), width = 240, height = 120)
+l_render(scene)
+```
+
+`l_template()` returns a native `gTree`, accepting grobs in `...` or in
+`children = list(...)`. Templates can be nested and mixed with native grid grobs.
+`l_rect()` and `l_text()` return native rectangle and text grobs, preserving grid
+arguments such as `x`, `y`, `just`, `hjust`, `vjust`, `default.units`, `name` and
+`vp`, plus rectangle dimensions or text rotation and overlap control.
+
+All three accept `gp` as a `gpar` or named list. Templates share it with their
+children using grid's inheritance rules. Rectangles and text also accept named
+graphical parameters directly, overriding `gp`: `col`, `fill`, `alpha`, `lwd`,
+`lty`, `fontsize`, `fontfamily`, `fontface`, `lineheight` and other `gpar` settings.
+Use `vp = grid::viewport(...)` for group rotation, clipping and local coordinates.
+
+Inside these grobs, numbers default to grid's `npc` units, with (0, 0) at the
+bottom-left; `grid::unit()` is also supported. These are not lplot's top-left
+pixel coordinates or percentage strings. Use `l_place()` for outer placement
+and explicit template dimensions, or `l_get_element()` for semantic metadata
+and responsive styles.
 
 ## Save Images
 
