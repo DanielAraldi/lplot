@@ -74,34 +74,36 @@ map_source <- function(
 
 map_scale_bar <- function(distance_m, extent) {
   width_m <- as.numeric(extent[["xmax"]] - extent[["xmin"]])
-  scale <- grid::grobTree(
-    grid::rectGrob(
+  scale <- lplot::l_template(
+    lplot::l_rect(
       x = 0.25,
       y = 0.3,
       width = 0.5,
       height = 0.25,
-      gp = grid::gpar(fill = "#203C43", col = "#203C43")
+      fill = "#203C43",
+      col = "#203C43"
     ),
-    grid::rectGrob(
+    lplot::l_rect(
       x = 0.75,
       y = 0.3,
       width = 0.5,
       height = 0.25,
-      gp = grid::gpar(fill = "white", col = "#203C43")
+      fill = "white",
+      col = "#203C43"
     ),
-    grid::textGrob(
+    lplot::l_text(
       "0",
       x = 0,
       y = 0.8,
       just = "left",
-      gp = grid::gpar(fontsize = 8)
+      fontsize = 8
     ),
-    grid::textGrob(
+    lplot::l_text(
       paste(distance_m / 1000, "km"),
       x = 1,
       y = 0.8,
       just = "right",
-      gp = grid::gpar(fontsize = 8)
+      fontsize = 8
     )
   )
   lplot::l_get_element(
@@ -158,9 +160,10 @@ map_sheet <- function(plot, frame, heading = "Carolina do Norte") {
   )
   legend <- lplot::l_get_element(plot, "legend")
   credit <- lplot::l_get_element(
-    grid::textGrob(
+    lplot::l_text(
       "Fonte: NAD83 / NC (m) | Elaboração: Daniel Sansão Araldi",
-      gp = grid::gpar(fontsize = 7, col = "#50666C")
+      fontsize = 7,
+      col = "#50666C"
     ),
     "credits"
   )
@@ -208,7 +211,7 @@ map_north_arrow <- function(extent) {
       sf::st_coordinates(center)
   )
   angle <- atan2(direction[[2]], direction[[1]]) * 180 / pi - 90
-  arrow <- grid::grobTree(
+  arrow <- lplot::l_template(
     grid::segmentsGrob(
       x0 = 0.5,
       x1 = 0.5,
@@ -217,11 +220,12 @@ map_north_arrow <- function(extent) {
       arrow = grid::arrow(length = grid::unit(3, "mm"), type = "closed"),
       gp = grid::gpar(col = "#203C43", fill = "#203C43", lwd = 1.5)
     ),
-    grid::textGrob(
+    lplot::l_text(
       "N",
       x = 0.5,
       y = 0.92,
-      gp = grid::gpar(fontsize = 11, fontface = "bold")
+      fontsize = 11,
+      fontface = "bold"
     ),
     vp = grid::viewport(angle = angle)
   )

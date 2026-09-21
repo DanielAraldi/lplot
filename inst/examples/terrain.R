@@ -70,11 +70,12 @@ terrain_scene <- function() {
     ) +
     ggplot2::theme_minimal(base_size = 8)
   note <- lplot::l_get_element(
-    grid::textGrob(
+    lplot::l_text(
       "Data:\ndatasets::volcano\n10 m local grid",
       just = "left",
       x = 0,
-      gp = grid::gpar(fontsize = 8, col = "#4F5C58")
+      fontsize = 8,
+      col = "#4F5C58"
     ),
     "credits"
   )
