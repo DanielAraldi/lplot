@@ -1,0 +1,14 @@
+Package: lplot
+Title: Responsive Scene Graphs for R Graphics
+Version: 0.1.0
+Authors@R: person("lplot", "Contributors", role = c("aut", "cre"), email = "lplot@example.org")
+Description: Extract semantic elements from ggplot2 graphics and compose them
+    with logical lengths, anchors, constraints and nested viewports. Layout is
+    resolved for each rendering context and drawn using native grid graphics.
+    Optional image devices export scenes to JPEG, PNG, SVG and WebP files.
+License: GPL-3
+Encoding: UTF-8
+Depends: R (>= 4.1.0)
+Imports: ggplot2 (>= 3.5.0), grid, gtable
+Suggests: testthat (>= 3.0.0), vdiffr, svglite, sf, ragg, webp, png, jpeg
+Config/testthat/edition: 3

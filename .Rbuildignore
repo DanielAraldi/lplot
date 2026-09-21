@@ -1,0 +1,6 @@
+^docs$
+^\.github$
+^\.gitignore$
+^artifacts$
+^.*\.Rproj$
+^\.Rproj\.user$

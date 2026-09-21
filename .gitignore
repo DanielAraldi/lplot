@@ -1,0 +1,8 @@
+.Rhistory
+.RData
+.Rproj.user/
+Rplots.pdf
+artifacts/
+*.Rcheck/
+*.tar.gz
+docs

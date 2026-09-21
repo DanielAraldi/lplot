@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='svglite' data-engine-version='2.0' width='720.00pt' height='576.00pt' viewBox='0 0 720.00 576.00'>
+<defs>
+  <style type='text/css'><![CDATA[
+    .svglite line, .svglite polyline, .svglite polygon, .svglite path, .svglite rect, .svglite circle {
+      fill: none;
+      stroke: #000000;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-miterlimit: 10.00;
+    }
+  ]]></style>
+</defs>
+<rect width='100%' height='100%' style='stroke: none; fill: #FFFFFF;'/>
+<defs>
+  <clipPath id='cpMC4wMHw3MjAuMDB8MC4wMHw1NzYuMDA='>
+    <rect x='0.00' y='0.00' width='720.00' height='576.00' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHw1NzYuMDA=)'>
+<rect x='0.00' y='0.00' width='720.00' height='576.00' style='stroke-width: 0.75; stroke: none; fill: #F3F6F2;' />
+<polygon points='693.00,26.25 684.60,57.75 693.00,48.75 701.40,57.75 ' style='stroke-width: 0.75; fill: #263C33;' />
+<text x='693.00' y='21.38' text-anchor='middle' style='font-size: 12.00px; font-weight: bold; font-family: sans;' textLength='8.67px' lengthAdjust='spacingAndGlyphs'>N</text>
+<rect x='15.00' y='551.44' width='52.50' height='5.62' style='stroke-width: 0.75; fill: #000000;' />
+<rect x='67.50' y='551.44' width='52.50' height='5.62' style='stroke-width: 0.75; fill: #FFFFFF;' />
+<text x='67.50' y='546.10' text-anchor='middle' style='font-size: 9.00px; font-family: sans;' textLength='79.52px' lengthAdjust='spacingAndGlyphs'>0                      1 km</text>
+</g>
+</svg>
