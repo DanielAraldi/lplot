@@ -54,10 +54,10 @@ Install the optional `ragg` dependency before using this PNG export.
 
 ## Independent Function Examples
 
-There is one standalone script for each of the 18 exported functions in
+There is one standalone script for each of the 19 exported functions in
 [inst/examples/functions/](inst/examples/functions/). Each focuses on its named
-function, using `l_text()` and `l_rect()` to prepare content and `l_render()` to
-draw where applicable. Every script supplies its own inputs; no shared
+function, using `l_text()` and `l_rect()` to prepare content, `l_unit()` for native
+grid dimensions and `l_render()` to draw where applicable. Every script supplies its own inputs; no shared
 utilities, other example scripts, sf installation or downloads are required.
 
 From the project root, load the development package and choose a script:
@@ -81,6 +81,7 @@ script stores its main return value in `result`, even when a subsequent
 
 | Function               | Script                                                                                       | Demonstration                                                    |
 | ---------------------- | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `l_unit()`             | [inst/examples/functions/l_unit.R](inst/examples/functions/l_unit.R)                         | Declare and print a native grid unit in millimetres.             |
 | `l_length()`           | [inst/examples/functions/l_length.R](inst/examples/functions/l_length.R)                     | Declare and print a percentage length.                           |
 | `l_clamp()`            | [inst/examples/functions/l_clamp.R](inst/examples/functions/l_clamp.R)                       | Declare minimum, preferred and maximum lengths.                  |
 | `l_text()`             | [inst/examples/functions/l_text.R](inst/examples/functions/l_text.R)                         | Draw text with explicit typography.                              |
@@ -103,14 +104,15 @@ script stores its main return value in `result`, even when a subsequent
 The `l_as_grob()` and `l_template()` examples use `l_place()` to give graphical
 trees an explicit rendering area rather than relying on automatic intrinsic
 measurement. The `l_rect()` example also uses an explicit area to preserve its
-relative geometry. `grid::unit()` remains useful for native physical dimensions.
+relative geometry. `l_unit()` creates native grid units, including physical
+dimensions; direct `grid::unit()` calls remain supported.
 
 The export example requires the optional **svglite** package
 (`install.packages("svglite")`). It creates a new temporary directory on every
 run, writes an SVG there and prints its absolute path. Change `dir` to retain
 the file outside R's temporary directory. Existing files are not overwritten.
 
-To test all 18 examples in isolated environments from the project root:
+To test all 19 examples in isolated environments from the project root:
 
 ```sh
 NOT_CRAN=true Rscript -e 'testthat::test_local(filter = "function-examples", reporter = "summary", stop_on_failure = TRUE)'
@@ -299,10 +301,58 @@ graphical parameters directly, overriding `gp`: `col`, `fill`, `alpha`, `lwd`,
 Use `vp = grid::viewport(...)` for group rotation, clipping and local coordinates.
 
 Inside these grobs, numbers default to grid's `npc` units, with (0, 0) at the
-bottom-left; `grid::unit()` is also supported. These are not lplot's top-left
+bottom-left; `l_unit()` and `grid::unit()` objects are also supported. These are not lplot's top-left
 pixel coordinates or percentage strings. Use `l_place()` for outer placement
 and explicit template dimensions, or `l_get_element()` for semantic metadata
 and responsive styles.
+
+## Native Grid Units
+
+`l_unit(x, units, data = NULL)` delegates directly to `grid::unit()` and returns
+the same native `unit` object. It accepts the same arguments and uses grid's
+validation and recycling rules, without adding a dependency or a new unit class:
+
+- `x`: numeric vector of values.
+- `units`: grid unit names, such as `"mm"`, `"cm"`, `"inches"`, `"points"`,
+  `"npc"`, `"native"`, `"lines"` or `"char"`. Unit names can also be a vector.
+- `data`: optional text, expression, grob, grob path or list for units that
+  require it, such as `"strwidth"`, `"strheight"`, `"grobwidth"` and `"grobheight"`.
+  The default is `NULL`.
+
+```r
+spacing <- l_unit(5, "mm")
+identical(spacing, grid::unit(5, "mm")) # TRUE
+l_unit(c(0.25, 0.75), "npc")
+l_unit(c(1, 5), c("cm", "mm"))
+l_unit(1, "strwidth", data = "Survey area")
+
+outline <- l_rect(
+  width = l_unit(20, "mm"), height = l_unit(10, "mm"),
+  fill = NA, col = "black"
+)
+label <- l_text("Survey", x = spacing, just = "left")
+l_unit(1, "grobwidth", data = label)
+l_unit(1, "npc") - spacing
+```
+
+Use these objects inside `l_rect()`, `l_text()`, template children and native
+grid grobs or viewports. Native arithmetic, indexing and `grid::unit.c()` work
+unchanged. Construction does not draw, open a device or convert to a fixed
+numeric size. Grid evaluates relative units and font/grob measurements in the
+applicable viewport and device; use `grid::convertUnit()`, `grid::convertWidth()`
+or `grid::convertHeight()` for explicit conversions in that context.
+
+`l_unit(0.5, "npc")` means half a native grid viewport; `l_length("50%")` is an
+lplot layout length. Use `l_length()` or layout strings for `l_place()` and
+`l_viewport()` constraints. Grid units do not accept CSS-like `"px"`, `"%"`,
+`"vw"`, `"auto"` or `"clamp(...)"`. Invalid input produces grid errors.
+The `"null"` unit has its relative-sizing meaning in `grid::grid.layout()`, not
+in the lplot layout engine. Native `npc` coordinates retain a bottom-left origin.
+
+See `?l_unit` and `?grid::unit` for help and the full native unit vocabulary,
+[docs/02-API.md](docs/02-API.md) for the contract, and
+[inst/examples/functions/l_unit.R](inst/examples/functions/l_unit.R) for an
+independently executable example.
 
 ## Save Images
 
@@ -434,7 +484,7 @@ anchors, IDs, coordinates, z-order and collision candidates.
 
 ## Maintaining API Documentation
 
-All 18 exported functions and four registered S3 methods have English roxygen2
+All 19 exported functions and four registered S3 methods have English roxygen2
 documentation next to their definitions in [R/](R/). Each help topic includes
 parameters, return values, usage details, related functions and runnable examples.
 
@@ -462,6 +512,9 @@ R CMD check --no-manual lplot_0.1.0.tar.gz
 
 Tests cover lengths, extraction/theme inheritance, style isolation, constraints,
 nesting/joining, four output sizes, collision policy, rendering and visual references.
+The `templates` and `function-examples` tests also verify `l_unit()` against
+`grid::unit()`, including vectors, auxiliary data, arithmetic, invalid inputs,
+viewport-dependent conversion and identical rendering at two sizes.
 Export tests decode JPEG/PNG/WebP, inspect SVG and check device restoration,
 file safety and dimensions. Run `testthat::test_local(filter = "save")`;
 full codec tests additionally use optional `png` and `jpeg` image readers.

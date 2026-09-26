@@ -9,8 +9,8 @@ with_grid_context <- function(context, code) {
     on.exit(grDevices::dev.off(), add = TRUE)
   }
   grid::pushViewport(grid::viewport(
-    width = grid::unit(context$width / 96, "inches"),
-    height = grid::unit(context$height / 96, "inches")
+    width = l_unit(context$width / 96, "inches"),
+    height = l_unit(context$height / 96, "inches")
   ))
   on.exit(grid::popViewport(), add = TRUE, after = FALSE)
   force(code)

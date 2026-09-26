@@ -5,10 +5,10 @@
 \title{Create rectangles with native grid geometry}
 \usage{
 l_rect(
-  x = grid::unit(0.5, "npc"),
-  y = grid::unit(0.5, "npc"),
-  width = grid::unit(1, "npc"),
-  height = grid::unit(1, "npc"),
+  x = l_unit(0.5, "npc"),
+  y = l_unit(0.5, "npc"),
+  width = l_unit(1, "npc"),
+  height = l_unit(1, "npc"),
   just = "centre",
   hjust = NULL,
   vjust = NULL,
@@ -20,7 +20,8 @@ l_rect(
 )
 }
 \arguments{
-\item{x, y}{Numeric coordinates in \code{default.units}, or \code{\link[grid:unit]{grid::unit()}} objects.
+\item{x, y}{Numeric coordinates in \code{default.units}, or \code{\link[=l_unit]{l_unit()}} / \code{\link[grid:unit]{grid::unit()}}
+objects.
 Vectors are supported according to \code{\link[grid:grid.rect]{grid::rectGrob()}} recycling rules.}
 
 \item{width, height}{Rectangle dimensions as numbers in \code{default.units} or
@@ -65,7 +66,7 @@ does not guarantee a white background. The supplied \code{gp} is not modified.
 
 Numbers default to normalized parent coordinates, with the origin at the
 bottom-left. For example, \code{width = 0.5} occupies half the current viewport;
-\code{width = grid::unit(20, "mm")} remains a physical 20 mm. Layout strings such
+\code{width = l_unit(20, "mm")} remains a physical 20 mm. Layout strings such
 as \code{"50\%"} or \code{"8px"} belong to \code{\link[=l_place]{l_place()}}, not this constructor.
 Using \code{"native"} coordinates requires appropriate grid viewport scales and
 does not automatically connect the rectangle to a map's projection.
@@ -84,11 +85,11 @@ scene <- l_viewport(list(
 ))
 l_render(scene, width = 200, height = 80)
 outline <- l_rect(
-  width = grid::unit(20, "mm"),
-  height = grid::unit(10, "mm"), fill = NA, col = "black", lty = "dashed"
+  width = l_unit(20, "mm"),
+  height = l_unit(10, "mm"), fill = NA, col = "black", lty = "dashed"
 )
 grid::is.grob(outline)
 }
 \seealso{
-\code{\link[=l_text]{l_text()}}, \code{\link[=l_template]{l_template()}}, \code{\link[grid:grid.rect]{grid::rectGrob()}}, \code{\link[grid:gpar]{grid::gpar()}}
+\code{\link[=l_unit]{l_unit()}}, \code{\link[=l_text]{l_text()}}, \code{\link[=l_template]{l_template()}}, \code{\link[grid:grid.rect]{grid::rectGrob()}}, \code{\link[grid:gpar]{grid::gpar()}}
 }

@@ -269,7 +269,7 @@ style_source <- function(source, type, style) {
     names(style),
     c("legend.key_width", "legend.key_height")
   )) {
-    properties[[sub("_", ".", property, fixed = TRUE)]] <- grid::unit(
+    properties[[sub("_", ".", property, fixed = TRUE)]] <- l_unit(
       style[[property]] / 96,
       "inches"
     )

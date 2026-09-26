@@ -24,6 +24,65 @@ template_gpar <- function(gp = NULL, overrides = list()) {
   gp
 }
 
+#' Create native grid units
+#'
+#' Construct a unit object by delegating directly to [grid::unit()]. The
+#' arguments, validation, vectorization and return value follow grid's native
+#' behavior. No lplot-specific units or conversions are added.
+#'
+#' @param x Numeric vector of values interpreted in `units`.
+#' @param units Character vector of grid unit names, recycled according to
+#'   [grid::unit()] rules. Examples include `"npc"`, `"native"`, `"mm"`, `"cm"`,
+#'   `"inches"`, `"points"`, `"lines"`, `"char"`, `"null"`, `"strwidth"`,
+#'   `"strheight"`, `"grobwidth"` and `"grobheight"`. See [grid::unit()] for the
+#'   complete list and supported aliases.
+#' @param data Optional auxiliary data required by some units, passed unchanged
+#'   to [grid::unit()]. Supply text or an expression for string-based units, a
+#'   grob or [grid::gPath()] for grob-based units, or a list for multiple values,
+#'   following grid's recycling rules. Defaults to `NULL`.
+#'
+#' @details
+#' This function creates a unit specification, not a converted numeric length.
+#' Relative units and font or grob measurements are evaluated by grid in the
+#' applicable viewport and graphics-device context. Use [grid::convertUnit()],
+#' [grid::convertWidth()] or [grid::convertHeight()] for explicit conversions.
+#' Construction does not draw or open a graphics device.
+#'
+#' Unit objects work with [l_rect()], [l_text()], native grid grobs and
+#' viewports, including the children of [l_template()]. Native grid arithmetic,
+#' indexing and [grid::unit.c()] remain available. With `"npc"`, `(0, 0)` is
+#' the bottom-left corner and `(1, 1)` is the top-right corner of the viewport.
+#' The `"null"` unit is meaningful for relative sizing in [grid::grid.layout()].
+#'
+#' These are not lplot layout lengths. Use [l_length()] or layout strings for
+#' [l_place()] and [l_viewport()] constraints. For example, `l_unit(0.5, "npc")`
+#' describes half a native grid viewport, whereas `l_length("50%")` describes
+#' half the relevant lplot parent dimension. CSS-like `"px"`, `"%"`, `"vw"`,
+#' `"auto"` and `"clamp(...)"` are not grid unit names. Invalid input raises
+#' grid's own errors, not lplot-specific conditions.
+#'
+#' @returns A native grid `unit` object, identical to the result of
+#'   `grid::unit(x, units, data = data)`. It is not an `l_length` or a grob.
+#' @seealso [grid::unit()], [grid::convertUnit()], [grid::unit.c()],
+#'   [l_length()], [l_rect()], [l_text()], [l_template()]
+#' @examples
+#' spacing <- l_unit(5, "mm")
+#' grid::is.unit(spacing)
+#' l_unit(c(0.25, 0.75), "npc")
+#' l_unit(c(1, 5), c("cm", "mm"))
+#' l_unit(1, "strwidth", data = "Survey area")
+#' outline <- l_rect(
+#'   width = l_unit(20, "mm"), height = l_unit(10, "mm"),
+#'   fill = NA, col = "black"
+#' )
+#' grid::is.grob(outline)
+#' l_unit(1, "grobwidth", data = outline)
+#' l_unit(1, "npc") - spacing
+#' @export
+l_unit <- function(x, units, data = NULL) {
+  grid::unit(x, units, data = data)
+}
+
 #' Compose reusable graphical templates
 #'
 #' Combine native grid grobs into a single graphical object without drawing it.
@@ -115,7 +174,8 @@ l_template <- function(
 #' parameters. The default rectangle is centered and fills its current grid
 #' viewport. Construction does not draw or open a graphics device.
 #'
-#' @param x,y Numeric coordinates in `default.units`, or [grid::unit()] objects.
+#' @param x,y Numeric coordinates in `default.units`, or [l_unit()] / [grid::unit()]
+#'   objects.
 #'   Vectors are supported according to [grid::rectGrob()] recycling rules.
 #' @param width,height Rectangle dimensions as numbers in `default.units` or
 #'   grid unit objects. These are internal geometry, not lplot layout lengths.
@@ -138,7 +198,7 @@ l_template <- function(
 #'
 #' Numbers default to normalized parent coordinates, with the origin at the
 #' bottom-left. For example, `width = 0.5` occupies half the current viewport;
-#' `width = grid::unit(20, "mm")` remains a physical 20 mm. Layout strings such
+#' `width = l_unit(20, "mm")` remains a physical 20 mm. Layout strings such
 #' as `"50%"` or `"8px"` belong to [l_place()], not this constructor.
 #' Using `"native"` coordinates requires appropriate grid viewport scales and
 #' does not automatically connect the rectangle to a map's projection.
@@ -149,7 +209,7 @@ l_template <- function(
 #'
 #' @returns A native grid `rect` grob, suitable for [l_template()] or direct
 #'   use with [l_place()] and [grid::grid.draw()].
-#' @seealso [l_text()], [l_template()], [grid::rectGrob()], [grid::gpar()]
+#' @seealso [l_unit()], [l_text()], [l_template()], [grid::rectGrob()], [grid::gpar()]
 #' @examples
 #' swatches <- l_rect(
 #'   x = c(0.25, 0.75), width = 0.4, height = 0.7,
@@ -160,16 +220,16 @@ l_template <- function(
 #' ))
 #' l_render(scene, width = 200, height = 80)
 #' outline <- l_rect(
-#'   width = grid::unit(20, "mm"),
-#'   height = grid::unit(10, "mm"), fill = NA, col = "black", lty = "dashed"
+#'   width = l_unit(20, "mm"),
+#'   height = l_unit(10, "mm"), fill = NA, col = "black", lty = "dashed"
 #' )
 #' grid::is.grob(outline)
 #' @export
 l_rect <- function(
-  x = grid::unit(0.5, "npc"),
-  y = grid::unit(0.5, "npc"),
-  width = grid::unit(1, "npc"),
-  height = grid::unit(1, "npc"),
+  x = l_unit(0.5, "npc"),
+  y = l_unit(0.5, "npc"),
+  width = l_unit(1, "npc"),
+  height = l_unit(1, "npc"),
   just = "centre",
   hjust = NULL,
   vjust = NULL,
@@ -221,7 +281,7 @@ l_rect <- function(
 #'
 #' @returns A native grid `text` grob. [l_measure()] can inspect its intrinsic
 #'   size, and [l_template()] can combine it with other graphical primitives.
-#' @seealso [grid::textGrob()], [grid::gpar()], [l_get_element()], [l_style()]
+#' @seealso [l_unit()], [grid::textGrob()], [grid::gpar()], [l_get_element()], [l_style()]
 #' @examples
 #' note <- l_text("Source: survey\nLocal coordinates",
 #'   x = 0, just = "left",
@@ -240,8 +300,8 @@ l_rect <- function(
 #' @export
 l_text <- function(
   label,
-  x = grid::unit(0.5, "npc"),
-  y = grid::unit(0.5, "npc"),
+  x = l_unit(0.5, "npc"),
+  y = l_unit(0.5, "npc"),
   just = "centre",
   hjust = NULL,
   vjust = NULL,

@@ -18,7 +18,7 @@ test_that("every exported function has a focused example with lplot helpers", {
     function_name <- tools::file_path_sans_ext(basename(path))
     symbols <- all.names(parse(path), functions = TRUE, unique = TRUE)
     expect_true(function_name %in% symbols, info = basename(path))
-    helpers <- c("l_text", "l_rect", "l_place", "l_render")
+    helpers <- c("l_text", "l_rect", "l_place", "l_render", "l_unit")
     expect_true(
       all(intersect(symbols, public_functions) %in% c(function_name, helpers)),
       info = basename(path)
@@ -37,6 +37,10 @@ test_that("every exported function has a focused example with lplot helpers", {
 })
 
 test_that("length examples run without shared helpers or session objects", {
+  unit <- run_function_example("l_unit")$result
+  expect_true(grid::is.unit(unit))
+  expect_identical(unit, grid::unit(5, "mm"))
+
   length <- run_function_example("l_length")$result
   expect_s3_class(length, "l_length")
   expect_equal(length$value, 25)

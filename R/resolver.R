@@ -525,13 +525,13 @@ root_context <- function(node, width, height, dpi) {
   if (grDevices::dev.cur() != 1L) {
     defaults <- c(
       width = grid::convertWidth(
-        grid::unit(1, "npc"),
+        l_unit(1, "npc"),
         "inches",
         valueOnly = TRUE
       ) *
         96,
       height = grid::convertHeight(
-        grid::unit(1, "npc"),
+        l_unit(1, "npc"),
         "inches",
         valueOnly = TRUE
       ) *

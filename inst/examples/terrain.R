@@ -14,8 +14,8 @@ terrain_scene <- function() {
     ggplot2::scale_fill_gradientn(
       colours = c("#E0F3DB", "#A8DDB5", "#43A2CA", "#0868AC", "#084081"),
       guide = ggplot2::guide_colourbar(
-        barheight = grid::unit(22, "mm"),
-        barwidth = grid::unit(2.5, "mm")
+        barheight = lplot::l_unit(22, "mm"),
+        barwidth = lplot::l_unit(2.5, "mm")
       )
     ) +
     ggplot2::labs(
