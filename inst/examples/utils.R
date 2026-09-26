@@ -1,17 +1,3 @@
-map_counties <- function() {
-  if (!requireNamespace("sf", quietly = TRUE)) {
-    stop(
-      "These examples need sf. Run install.packages('sf') first.",
-      call. = FALSE
-    )
-  }
-  counties <- sf::st_read(
-    system.file("shape/nc.shp", package = "sf"),
-    quiet = TRUE
-  )
-  sf::st_transform(counties, 32119)
-}
-
 map_extent <- function(counties) {
   bounds <- sf::st_bbox(counties)
   padding <- c(
@@ -22,6 +8,44 @@ map_extent <- function(counties) {
   bounds[c("xmin", "ymin")] <- bounds[c("xmin", "ymin")] - padding
   bounds[c("xmax", "ymax")] <- bounds[c("xmax", "ymax")] + padding
   bounds
+}
+
+map_label_template <- function(
+  title,
+  subtitle,
+  accent = "#197C80",
+  background = "#F0F6F5"
+) {
+  lplot::l_template(
+    lplot::l_rect(fill = background, col = NA, name = "background"),
+    lplot::l_rect(
+      x = 0,
+      just = "left",
+      width = grid::unit(4, "pt"),
+      fill = accent,
+      col = NA,
+      name = "accent"
+    ),
+    lplot::l_text(
+      title,
+      x = grid::unit(14, "pt"),
+      y = 0.65,
+      just = "left",
+      fontsize = 12,
+      fontface = "bold",
+      col = accent,
+      name = "title"
+    ),
+    lplot::l_text(
+      subtitle,
+      x = grid::unit(14, "pt"),
+      y = 0.28,
+      just = "left",
+      fontsize = 8,
+      col = "#50666C",
+      name = "subtitle"
+    )
+  )
 }
 
 map_source <- function(
@@ -36,7 +60,10 @@ map_source <- function(
     ggplot2::geom_sf(mapping, colour = "#FFFFFF", linewidth = 0.3) +
     ggplot2::scale_fill_gradientn(
       colours = c("#EEF3CF", "#95CEC0", "#2B8E98", "#194E70"),
-      limits = c(0, ceiling(max(c(counties$BIR74, counties$BIR79)) / 10000) * 10000),
+      limits = c(
+        0,
+        ceiling(max(c(counties$BIR74, counties$BIR79)) / 10000) * 10000
+      ),
       breaks = c(0, 20000, 40000),
       labels = c("0", "20 mil", "40 mil"),
       name = "Nascimentos",
@@ -189,13 +216,6 @@ map_sheet <- function(plot, frame, heading = "Carolina do Norte") {
   )
 }
 
-map_scale_scene <- function() {
-  counties <- map_counties()
-  extent <- map_extent(counties)
-  plot <- map_source(counties, extent)
-  map_sheet(plot, map_frame(plot, extent))
-}
-
 map_north_arrow <- function(extent) {
   center <- sf::st_sfc(
     sf::st_point(c(
@@ -259,7 +279,11 @@ map_locator <- function(counties, focus) {
     ggplot2::theme_void() +
     ggplot2::theme(
       panel.background = ggplot2::element_rect(fill = "white", colour = NA),
-      panel.border = ggplot2::element_rect(fill = NA, colour = "#718A90", linewidth = 0.4)
+      panel.border = ggplot2::element_rect(
+        fill = NA,
+        colour = "#718A90",
+        linewidth = 0.4
+      )
     )
   ratio <- as.numeric(
     (extent[["xmax"]] - extent[["xmin"]]) /
@@ -277,64 +301,5 @@ map_locator <- function(counties, focus) {
     width = "34%",
     aspect_ratio = ratio,
     z_index = 30
-  )
-}
-
-map_inset_scene <- function() {
-  counties <- map_counties()
-  focus <- sf::st_bbox(
-    c(xmin = 580000, ymin = 130000, xmax = 820000, ymax = 290000),
-    crs = sf::st_crs(counties)
-  )
-  plot <- map_source(counties, focus, title = "Regiao central e leste")
-  frame <- map_frame(
-    plot,
-    focus,
-    distance_m = 50000,
-    overlays = list(
-      map_locator(counties, focus),
-      lplot::l_place(map_north_arrow(focus), right = 12, top = 12, z_index = 30)
-    )
-  )
-  map_sheet(plot, frame)
-}
-
-map_join_scene <- function() {
-  counties <- map_counties()
-  extent <- map_extent(counties)
-  first <- map_source(
-    counties,
-    extent,
-    field = "BIR74",
-    title = "Nascimentos | BIR74"
-  )
-  second <- map_source(
-    counties,
-    extent,
-    field = "BIR79",
-    title = "Nascimentos | BIR79"
-  )
-  first_scene <- map_sheet(first, map_frame(first, extent))
-  second_scene <- map_sheet(second, map_frame(second, extent))
-  lplot::l_join(
-    list(
-      lplot::l_place(
-        first_scene,
-        left = "0%",
-        top = "0%",
-        width = "49%",
-        height = "100%"
-      ),
-      lplot::l_place(
-        second_scene,
-        left = "51%",
-        top = "0%",
-        width = "49%",
-        height = "100%"
-      )
-    ),
-    width = 1200,
-    height = 650,
-    background = "#E6ECEE"
   )
 }
