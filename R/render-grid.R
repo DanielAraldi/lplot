@@ -1,9 +1,9 @@
 box_viewport <- function(box, name, clip = "inherit") {
   grid::viewport(
-    x = grid::unit(box[["x"]] / 96, "inches"),
-    y = grid::unit(1, "npc") - grid::unit(box[["y"]] / 96, "inches"),
-    width = grid::unit(box[["width"]] / 96, "inches"),
-    height = grid::unit(box[["height"]] / 96, "inches"),
+    x = l_unit(box[["x"]] / 96, "inches"),
+    y = l_unit(1, "npc") - l_unit(box[["y"]] / 96, "inches"),
+    width = l_unit(box[["width"]] / 96, "inches"),
+    height = l_unit(box[["height"]] / 96, "inches"),
     just = c("left", "top"),
     name = name,
     clip = clip
@@ -66,7 +66,7 @@ debug_grobs <- function(resolved) {
       x = fraction[["x"]],
       y = 1 - fraction[["y"]],
       pch = 3,
-      size = grid::unit(2, "mm"),
+      size = l_unit(2, "mm"),
       gp = grid::gpar(col = "#C62828")
     ),
     grid::textGrob(
@@ -154,11 +154,11 @@ compile_node <- function(resolved, debug = FALSE, ancestor_clips = FALSE) {
   border <- resolved$border
   if (border$width > 0) {
     children[[length(children) + 1L]] <- grid::rectGrob(
-      width = grid::unit(
+      width = l_unit(
         max(0, resolved$box[["width"]] - border$width) / 96,
         "inches"
       ),
-      height = grid::unit(
+      height = l_unit(
         max(0, resolved$box[["height"]] - border$width) / 96,
         "inches"
       ),

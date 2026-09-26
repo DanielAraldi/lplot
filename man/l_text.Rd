@@ -6,8 +6,8 @@
 \usage{
 l_text(
   label,
-  x = grid::unit(0.5, "npc"),
-  y = grid::unit(0.5, "npc"),
+  x = l_unit(0.5, "npc"),
+  y = l_unit(0.5, "npc"),
   just = "centre",
   hjust = NULL,
   vjust = NULL,
@@ -24,7 +24,8 @@ l_text(
 \item{label}{Text to display, including character vectors and mathematical
 expressions such as \code{expression(alpha^2)}. Use \code{"\\n"} for explicit lines.}
 
-\item{x, y}{Numeric coordinates in \code{default.units}, or \code{\link[grid:unit]{grid::unit()}} objects.
+\item{x, y}{Numeric coordinates in \code{default.units}, or \code{\link[=l_unit]{l_unit()}} / \code{\link[grid:unit]{grid::unit()}}
+objects.
 Vectors are supported according to \code{\link[grid:grid.rect]{grid::rectGrob()}} recycling rules.}
 
 \item{just}{Character or numeric justification relative to \verb{(x, y)}, such
@@ -98,5 +99,5 @@ formula <- l_text(expression(alpha^2 + beta^2), fontsize = 12)
 grid::is.grob(formula)
 }
 \seealso{
-\code{\link[grid:grid.text]{grid::textGrob()}}, \code{\link[grid:gpar]{grid::gpar()}}, \code{\link[=l_get_element]{l_get_element()}}, \code{\link[=l_style]{l_style()}}
+\code{\link[=l_unit]{l_unit()}}, \code{\link[grid:grid.text]{grid::textGrob()}}, \code{\link[grid:gpar]{grid::gpar()}}, \code{\link[=l_get_element]{l_get_element()}}, \code{\link[=l_style]{l_style()}}
 }

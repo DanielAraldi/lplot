@@ -21,14 +21,14 @@ map_label_template <- function(
     lplot::l_rect(
       x = 0,
       just = "left",
-      width = grid::unit(4, "pt"),
+      width = lplot::l_unit(4, "pt"),
       fill = accent,
       col = NA,
       name = "accent"
     ),
     lplot::l_text(
       title,
-      x = grid::unit(14, "pt"),
+      x = lplot::l_unit(14, "pt"),
       y = 0.65,
       just = "left",
       fontsize = 12,
@@ -38,7 +38,7 @@ map_label_template <- function(
     ),
     lplot::l_text(
       subtitle,
-      x = grid::unit(14, "pt"),
+      x = lplot::l_unit(14, "pt"),
       y = 0.28,
       just = "left",
       fontsize = 8,
@@ -70,8 +70,8 @@ map_source <- function(
       guide = ggplot2::guide_colourbar(
         direction = "horizontal",
         title.position = "top",
-        barwidth = grid::unit(42, "mm"),
-        barheight = grid::unit(2.5, "mm")
+        barwidth = lplot::l_unit(42, "mm"),
+        barheight = lplot::l_unit(2.5, "mm")
       )
     ) +
     ggplot2::coord_sf(
@@ -237,7 +237,7 @@ map_north_arrow <- function(extent) {
       x1 = 0.5,
       y0 = 0.14,
       y1 = 0.72,
-      arrow = grid::arrow(length = grid::unit(3, "mm"), type = "closed"),
+      arrow = grid::arrow(length = lplot::l_unit(3, "mm"), type = "closed"),
       gp = grid::gpar(col = "#203C43", fill = "#203C43", lwd = 1.5)
     ),
     lplot::l_text(

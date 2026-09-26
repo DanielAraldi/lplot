@@ -1,6 +1,6 @@
 rectangle <- lplot::l_rect(
-  width = grid::unit(40, "mm"),
-  height = grid::unit(20, "mm")
+  width = lplot::l_unit(40, "mm"),
+  height = lplot::l_unit(20, "mm")
 )
 
 result <- lplot::l_resolve(rectangle, width = 600, height = 400)
