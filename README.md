@@ -52,22 +52,178 @@ l_save(scene, type = "png", dir = "exports", filename = "terrain",
 
 Install the optional `ragg` dependency before using this PNG export.
 
+## Independent Function Examples
+
+There is one standalone script for each of the 18 exported functions in
+[inst/examples/functions/](inst/examples/functions/). Each focuses on its named
+function, using `l_text()` and `l_rect()` to prepare content and `l_render()` to
+draw where applicable. Every script supplies its own inputs; no shared
+utilities, other example scripts, sf installation or downloads are required.
+
+From the project root, load the development package and choose a script:
+
+```r
+pkgload::load_all(".")
+source("inst/examples/functions/l_get_element.R")
+```
+
+With lplot installed, the equivalent is:
+
+```r
+source(system.file("examples", "functions", "l_get_element.R", package = "lplot"))
+```
+
+Replace the filename to try another function. Unlike the map scene constructors,
+sourcing these scripts runs the example immediately. Graphics appear on the
+current device; inspection examples print their results to the console. Each
+script stores its main return value in `result`, even when a subsequent
+`l_render()` call draws it. Run the scripts separately, in any order.
+
+| Function               | Script                                                                                       | Demonstration                                                    |
+| ---------------------- | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `l_length()`           | [inst/examples/functions/l_length.R](inst/examples/functions/l_length.R)                     | Declare and print a percentage length.                           |
+| `l_clamp()`            | [inst/examples/functions/l_clamp.R](inst/examples/functions/l_clamp.R)                       | Declare minimum, preferred and maximum lengths.                  |
+| `l_text()`             | [inst/examples/functions/l_text.R](inst/examples/functions/l_text.R)                         | Draw text with explicit typography.                              |
+| `l_rect()`             | [inst/examples/functions/l_rect.R](inst/examples/functions/l_rect.R)                         | Draw a filled rectangle with an outline.                         |
+| `l_template()`         | [inst/examples/functions/l_template.R](inst/examples/functions/l_template.R)                 | Combine a rectangle and text into one reusable object.           |
+| `l_style()`            | [inst/examples/functions/l_style.R](inst/examples/functions/l_style.R)                       | Style a copy of a text grob.                                     |
+| `l_registry()`         | [inst/examples/functions/l_registry.R](inst/examples/functions/l_registry.R)                 | List the built-in extraction adapters.                           |
+| `l_register_element()` | [inst/examples/functions/l_register_element.R](inst/examples/functions/l_register_element.R) | Register a character-to-text adapter in an independent registry. |
+| `l_get_element()`      | [inst/examples/functions/l_get_element.R](inst/examples/functions/l_get_element.R)           | Extract and draw only a ggplot legend.                           |
+| `l_without()`          | [inst/examples/functions/l_without.R](inst/examples/functions/l_without.R)                   | Draw a copy of a ggplot without its title and legend.            |
+| `l_place()`            | [inst/examples/functions/l_place.R](inst/examples/functions/l_place.R)                       | Position and size a rectangle using percentages.                 |
+| `l_viewport()`         | [inst/examples/functions/l_viewport.R](inst/examples/functions/l_viewport.R)                 | Arrange text grobs in a padded local context.                    |
+| `l_join()`             | [inst/examples/functions/l_join.R](inst/examples/functions/l_join.R)                         | Join two rectangles with horizontal spacing.                     |
+| `l_as_grob()`          | [inst/examples/functions/l_as_grob.R](inst/examples/functions/l_as_grob.R)                   | Create and draw a deferred grid-compatible wrapper.              |
+| `l_render()`           | [inst/examples/functions/l_render.R](inst/examples/functions/l_render.R)                     | Draw a text grob and retain the returned layout.                 |
+| `l_measure()`          | [inst/examples/functions/l_measure.R](inst/examples/functions/l_measure.R)                   | Print the constrained and intrinsic dimensions of text.          |
+| `l_resolve()`          | [inst/examples/functions/l_resolve.R](inst/examples/functions/l_resolve.R)                   | Inspect the root and child boxes in logical pixels.              |
+| `l_save()`             | [inst/examples/functions/l_save.R](inst/examples/functions/l_save.R)                         | Export a text grob and print the output path.                    |
+
+The `l_as_grob()` and `l_template()` examples use `l_place()` to give graphical
+trees an explicit rendering area rather than relying on automatic intrinsic
+measurement. The `l_rect()` example also uses an explicit area to preserve its
+relative geometry. `grid::unit()` remains useful for native physical dimensions.
+
+The export example requires the optional **svglite** package
+(`install.packages("svglite")`). It creates a new temporary directory on every
+run, writes an SVG there and prints its absolute path. Change `dir` to retain
+the file outside R's temporary directory. Existing files are not overwritten.
+
+To test all 18 examples in isolated environments from the project root:
+
+```sh
+NOT_CRAN=true Rscript -e 'testthat::test_local(filter = "function-examples", reporter = "summary", stop_on_failure = TRUE)'
+```
+
+The four registered S3 methods support `print()`, `grid::grid.draw()` and
+`grid::makeContent()`; they are invoked through those generics rather than
+treated as additional exported lplot functions.
+
+## Four Progressive Map Examples
+
+[inst/examples/](inst/examples/) also provides four examples that progress from
+a minimal map to a composed cartographic report, each in its own file. All use the
+North Carolina counties bundled with the optional `sf` package; no external data
+download is required. `ggplot2` draws the geographic layers and `lplot` composes
+the elements. The third example additionally uses `sf` for reprojection and area
+calculations.
+
+From the project root, source each example file separately and run its rendering
+command:
+
+```r
+pkgload::load_all(".")
+
+source("inst/examples/simple.R")
+lplot::l_render(map_simple_scene())
+
+source("inst/examples/template.R")
+lplot::l_render(map_template_scene())
+
+source("inst/examples/sf.R")
+lplot::l_render(map_sf_scene())
+
+source("inst/examples/complex.R")
+lplot::l_render(map_complex_scene())
+```
+
+Install `sf` first with `install.packages("sf")` if needed. For an installed
+`lplot`, use `library(lplot)` and
+`source(system.file("examples", "simple.R", package = "lplot"))` (and so on for
+the other files) instead of the first two lines above. Sourcing a script only
+defines functions; it does not draw. The simple example reads the bundled data
+directly with `sf` and does not load utility scripts. The other examples load
+shared data (`inst/examples/data/maps.R`) and rendering helpers
+(`inst/examples/utils.R`). Source `simple.R` before `template.R` or `sf.R`,
+which reuse `map_simple_scene()`.
+
+1. **Simple map:** `map_simple_scene()` keeps the complete map in ggplot2, which
+   controls its coordinates and proportions. Only the title and horizontal
+   legend are extracted and positioned with lplot, with colour limits and breaks
+   derived from the selected data. Change `field` or supply
+   modified county data when constructing a new scene; no legend labels need to
+   be maintained by hand. Its position is resolved again at each device size.
+2. **Custom templates:** `map_template_scene()` reuses `map_label_template()` for
+   the heading and two summary labels. This helper combines `l_template()`,
+   `l_rect()` and `l_text()`. Content, accent colour and background change without
+   duplicating graphical construction or map placement. Templates receive explicit
+   outer dimensions, while their children use native grid coordinates.
+3. **Spatial processing:** `map_sf_scene()` transforms counties to EPSG:32119,
+   calculates projected area in square kilometres with `st_area()`, and maps
+   1974 births per 100 square kilometres. This is an area-normalized count, not a
+   population birth rate. An `sf` county object in another CRS can be supplied.
+4. **Complex map:** `map_complex_scene()` combines a regional map, locator inset,
+   georeferenced north arrow, 50 km projected scale, legend, reusable heading,
+   summary labels, top-five bar chart and source note in nested viewports.
+   Indicators and ranking include the **whole count** of every county intersecting
+   the displayed extent; counts are not estimated for clipped polygon fragments.
+
+Customize the data and template without changing the layout:
+
+```r
+lplot::l_render(map_simple_scene(field = "BIR79", title = "Nascimentos | 1979"))
+
+scene <- map_template_scene(
+  field = "BIR79", title = "Nascimentos | 1979",
+  accent = "#A63748", background = "#FAF1F3"
+)
+lplot::l_render(scene)
+
+counties <- sf::st_read(system.file("shape/nc.shp", package = "sf"), quiet = TRUE)
+lplot::l_render(map_sf_scene(counties))
+```
+
+Use at least 600 x 400 logical pixels for the first three examples and 1000 x 700
+for the complex composition. Export at an explicit size when the Plots pane is
+smaller (PNG requires the optional `ragg` package):
+
+```r
+lplot::l_save(map_complex_scene(), type = "png", dir = "exports",
+          filename = "complex-map", width = 1200, height = 800)
+```
+
 ## Three Cartographic Examples
 
-[inst/examples/maps.R](inst/examples/maps.R) contains three independently callable
-scenes. They use the North Carolina county polygons bundled with the optional `sf`
-package, so no data download, API key or network connection is needed after installation.
-Both map and terrain examples use the graphical constructors described below.
+[inst/examples/](inst/examples/) also contains three independently callable
+scenes, each in its own file (`scale.R`, `inset.R`, `join.R`). They use the North
+Carolina county polygons bundled with the optional `sf` package, so no data
+download, API key or network connection is needed after installation. Both map
+and terrain examples use the graphical constructors described below.
 
 In the Positron R console, with the project root as the working directory:
 
 ```r
 install.packages("sf") # Only if not already installed
 pkgload::load_all(".")
-source("inst/examples/maps.R")
 
+source("inst/examples/scale.R")
 lplot::l_render(map_scale_scene())
+
+source("inst/examples/inset.R")
 lplot::l_render(map_inset_scene())
+
+source("inst/examples/join.R")
 lplot::l_render(map_join_scene())
 ```
 
@@ -87,8 +243,9 @@ and legend positions are therefore not duplicated. `map_sheet()` places extracte
 titles, subtitles and legends, while `map_frame()` keeps the panel's aspect ratio.
 Scale bars and north arrows use `l_template()`, `l_rect()` and `l_text()` to build
 native grid grobs passed through `l_get_element()`.
-All helpers live in the same script; sourcing it only defines functions and does
-not open a graphics device or automatically draw all examples.
+These shared helpers live in `inst/examples/utils.R`; sourcing an example file only
+defines functions and does not open a graphics device or automatically draw all
+examples.
 
 Coordinates use EPSG:32119 (NAD83 / North Carolina), in metres. Scale-bar width is
 the requested projected distance divided by the displayed extent width, not a
@@ -110,7 +267,7 @@ For an installed package, replace the two loading commands with:
 
 ```r
 library(lplot)
-source(system.file("examples", "maps.R", package = "lplot"))
+source(system.file("examples", "join.R", package = "lplot"))
 ```
 
 ## Templates and Graphical Primitives
